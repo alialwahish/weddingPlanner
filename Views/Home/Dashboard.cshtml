@@ -1,0 +1,64 @@
+@using LoginReg.Models
+@model User
+
+    
+   
+
+<h1>Welcome to the wedding Planner</h1>
+
+<a href="/" >LogOff</a>
+
+<table>
+    <tr>
+        <th>Wedding |</th>
+        <th> Date |</th>
+        <th> Guest |</th>
+        <th> Action</th>
+        
+    </th>
+    @foreach(var wed in ViewBag.weds ){
+    <tr>
+        <td><a href="wed/@wed.WeddingId  ">@wed.Wedding_Names</a> | </td>
+        <td>@wed.Date.ToString("MMM - dd- yyyy") | </td>
+        <td>@wed.Guest |</td>
+
+    @{bool exist = false;}
+        @foreach(var v in wed.Vistors){
+            if(v.User.UserId==ViewBag.loggedUser.UserId){
+                exist=true;
+                break;
+            }
+        }
+        @if(wed.UserId == @ViewBag.loggedUser.UserId){
+
+        <td><a href="Delete"> Delete</a> </td>
+        }
+                        
+        else if(!exist)
+            {
+        <td><a href="RSVP/@wed.WeddingId" > RSVP </a> </td>
+       
+        }
+
+        else if(exist){
+                    <td><a href="Un_RSVP/@wed.WeddingId" > Un-RSVP </a> </td>
+
+        }
+        
+        
+    </tr>
+
+    }
+
+</table>
+
+<a href="newWedding">  <button>New Wedding</button></a>
+<br><br>
+
+     @foreach(var wed in ViewBag.weds ){
+        <p>Wedding: @wed.Wedding_Names</p>
+        @foreach(var v in wed.Vistors){
+            <p>@v.User.First_Name</p>
+           
+        }
+     }
