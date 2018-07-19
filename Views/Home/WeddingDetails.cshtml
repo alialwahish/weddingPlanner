@@ -14,5 +14,11 @@
 
 
 @foreach(var v in ViewBag.vis){
-    <p>@v.User.First_Name</p>
+    <p>@v.Users.First_Name @v.Users.Last_Name </p>
 }
+
+
+
+
+
+<h1>Wedding Address: @ViewBag.wed.Wedding_Address</h1>

@@ -9,17 +9,16 @@ namespace LoginReg
     {
 
         [Key]
-        public int VistorsId { get; set; }
+        public int VistsId { get; set; }
 
-        public int? UsersId { get; set; }
+        public int UserId { get; set; }
 
-        public User User { get; set; }
+        public User Users { get; set; }
 
         public int WeddingId {get;set;}
-        public Vistors()
-        {
-            User = new User();
-        }
+
+        public Wedding Wedding {get;set;}
+       
     }
 
 

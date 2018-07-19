@@ -53,11 +53,8 @@ namespace LoginReg.Controllers
 
         public IActionResult DashboardView()
         {
+            List<Wedding> Weddings = _context.weddings.Include(w => w.Vists).ToList();
 
-            List<User> Users = _context.users.Include(usr => usr.UserWeddings).ToList();
-            List<Wedding> Weds = _context.weddings.Include(wed => wed.Vistors).ToList();
-
-            List<Wedding> Weddings = _context.weddings.ToList();
 
             string Email = HttpContext.Session.GetString("Email");
             User user = _context.users.SingleOrDefault(usr => usr.Email == Email);
@@ -103,7 +100,7 @@ namespace LoginReg.Controllers
 
             Console.WriteLine("In Wedding Details");
 
-            Wedding wed = _context.weddings.Include(w => w.Vistors).FirstOrDefault(w => w.WeddingId == id);
+            Wedding wed = _context.weddings.FirstOrDefault(w => w.WeddingId == id);
 
             return RedirectToAction("WeddingDetails", wed);
         }
@@ -111,9 +108,10 @@ namespace LoginReg.Controllers
         public IActionResult WeddingDetails(Wedding wed)
         {
 
-            List<User> Users = _context.users.Include(usr => usr.UserWeddings).ToList();
-            List<Wedding> Weds = _context.weddings.Include(w => w.Vistors).ToList();
-            List<Vistors> vists = _context.Vistors.Where(v => v.WeddingId == wed.WeddingId).ToList();
+            List<User> Users = _context.users.Include(usr => usr.Weddings).ToList();
+            List<Wedding> Weds = _context.weddings.Include(w => w.Vists).ToList();
+            List<Vistors> vists = _context.Vistors.Where(v => v.WeddingId == wed.WeddingId)
+            .Include(v => v.Users).ToList();
 
 
 
@@ -133,7 +131,7 @@ namespace LoginReg.Controllers
             wed.Wedding_Names = Wedder1 + " and " + Wedder2;
             wed.Stat = user.UserId;
 
-            user.UserWeddings.Add(wed);
+            user.Weddings.Add(wed);
             _context.SaveChanges();
 
 
@@ -150,49 +148,90 @@ namespace LoginReg.Controllers
 
         public IActionResult Create(User user)
         {
-            PasswordHasher<User> Hasher = new PasswordHasher<User>();
-            user.Password = Hasher.HashPassword(user, user.Password);
-            user.Confirm_Password = Hasher.HashPassword(user, user.Confirm_Password);
+            if (ModelState.IsValid)
+            {
 
-            user.Created_At = DateTime.Now;
-            user.Updated_At = DateTime.Now;
+                PasswordHasher<User> Hasher = new PasswordHasher<User>();
+                user.Password = Hasher.HashPassword(user, user.Password);
+                user.Confirm_Password = Hasher.HashPassword(user, user.Confirm_Password);
 
-            _context.Add(user);
-            _context.SaveChanges();
-            ViewBag.user = user;
+                user.Created_At = DateTime.Now;
+                user.Updated_At = DateTime.Now;
 
-            HttpContext.Session.SetString("Email", user.Email);
+                _context.Add(user);
+                _context.SaveChanges();
+                ViewBag.user = user;
+
+                HttpContext.Session.SetString("Email", user.Email);
+                return RedirectToAction("DashboardView");
+            }
+            else
+            {
+                return View("Index");
+            }
 
 
-            return RedirectToAction("DashboardView");
         }
 
         [HttpPost("Home/login")]
         public IActionResult LogingMethod(string Email, string Password)
         {
 
+            List<Wedding> Weddings = _context.weddings.Include(wd => wd.Vists).ToList();
+
             User logUser = _context.users.SingleOrDefault(usr => usr.Email == Email);
 
 
-            if (logUser != null)
+
+
+            PasswordHasher<User> Hasher = new PasswordHasher<User>();
+
+            if (logUser != null && Password != null)
             {
 
-                Console.WriteLine(logUser.Email);
-                Console.WriteLine(logUser.Password);
-                ViewBag.logedUser = logUser;
-                HttpContext.Session.SetString("Email", logUser.Email);
+                if (0 != Hasher.VerifyHashedPassword(logUser, logUser.Password, Password))
+                {
 
-                return RedirectToAction("DashboardView");
+                    ViewBag.logedUser = logUser;
+                    HttpContext.Session.SetString("Email", logUser.Email);
+
+                    return RedirectToAction("DashboardView");
+
+                }
+                else
+                {
+                    
+                    ViewBag.err = "Password or Username is not valid";
+                    return View("SignIn");
+
+                }
+
 
             }
             else
             {
-                Console.WriteLine("Invalid User");
-                ViewBag.err = "Invalid User";
+                
+                ViewBag.err = "Email or Password can't be empty";
                 return View("SignIn");
             }
 
+
         }
+
+
+
+        [HttpGet("Home/Delete/{id}")]
+        public IActionResult Delete(int id)
+        {
+
+            Wedding wed = _context.weddings.FirstOrDefault(w => w.WeddingId == id);
+            _context.Remove(wed);
+            _context.SaveChanges();
+
+
+            return RedirectToAction("DashboardView");
+        }
+
 
         [HttpGet("Home/Un_RSVP/{id}")]
         public IActionResult Un_RSVP(int id)
@@ -203,10 +242,11 @@ namespace LoginReg.Controllers
             User user = _context.users.SingleOrDefault(usr => usr.Email == Email);
 
 
-            List<Wedding> Weddings = _context.weddings.Include(wd => wd.Vistors).ToList();
+            // List<Wedding> Weddings = _context.weddings.Include(wd => wd.Vists).ToList();
             Wedding wed = _context.weddings.FirstOrDefault(w => w.WeddingId == id);
-            Vistors v = new Vistors();
-            v.UsersId = user.UserId;
+
+            Vistors v = _context.Vistors.FirstOrDefault(vis => vis.UserId == user.UserId);
+            wed.Guest--;
             _context.Remove(v);
             _context.SaveChanges();
 
@@ -220,25 +260,29 @@ namespace LoginReg.Controllers
             string Email = HttpContext.Session.GetString("Email");
             User user = _context.users.SingleOrDefault(usr => usr.Email == Email);
 
-            List<User> Users = _context.users.Include(usr => usr.UserWeddings).ToList();
-            List<Wedding> Weddings = _context.weddings.Include(wd => wd.Vistors).ToList();
-            List<Vistors> Vistors = _context.Vistors.Include(vis => vis.User).ToList();
+
+            Wedding wed = _context.weddings.FirstOrDefault(w => w.WeddingId == id);
+
+            Vistors v = new Vistors()
+            {
+
+                Users = user,
+                Wedding = wed
+
+
+            };
+            wed.Guest++;
+            user.Vists.Add(v);
+            wed.Vists.Add(v);
+            _context.Add(v);
+            _context.SaveChanges();
 
 
 
-            Wedding wed = _context.weddings.Include(vs => vs.Vistors).ThenInclude(u => u.User).FirstOrDefault(w => w.WeddingId == id);
 
-            List<Vistors> vL = _context.Vistors.Where(vv => vv.WeddingId == wed.WeddingId).ToList();
-          
-                Vistors v = new Vistors();
-                v.User = user;
-                v.UsersId = user.UserId;
-                wed.Guest++;
-                wed.Vistors.Add(v);
-                _context.SaveChanges();
-                return RedirectToAction("DashboardView");
+            return RedirectToAction("DashboardView");
 
-            
+
 
 
 

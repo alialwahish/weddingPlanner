@@ -47,13 +47,14 @@ namespace LoginReg
         public int? WeddingsId { get; set; }
 
         
-        public int? VistorsId {get;set;}
+        public int? VistsId {get;set;}
         
-        
-        public List<Wedding> UserWeddings { get; set; }
+        public List<Vistors> Vists {get;set;}
+        public List<Wedding> Weddings { get; set; }
 
         public User (){
-            UserWeddings = new List<Wedding>();
+            Vists = new List<Vistors>();
+            Weddings = new List<Wedding>();
         }
 
     }

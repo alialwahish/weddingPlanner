@@ -23,30 +23,41 @@
         <td>@wed.Guest |</td>
 
     @{bool exist = false;}
-        @foreach(var v in wed.Vistors){
-            if(v.User.UserId==ViewBag.loggedUser.UserId){
+    
+    
+        @if(wed.UserId == @ViewBag.loggedUser.UserId){
+
+        <td><a href="Delete/@wed.WeddingId"> Delete</a> </td>
+        }
+                        
+        else 
+            {
+
+            @foreach(var v in wed.Vists ){
+                @if(v.Users==ViewBag.loggedUser){
                 exist=true;
                 break;
             }
-        }
-        @if(wed.UserId == @ViewBag.loggedUser.UserId){
-
-        <td><a href="Delete"> Delete</a> </td>
-        }
-                        
-        else if(!exist)
-            {
-        <td><a href="RSVP/@wed.WeddingId" > RSVP </a> </td>
-       
-        }
-
-        else if(exist){
+            
+            }
+                if(exist){
                     <td><a href="Un_RSVP/@wed.WeddingId" > Un-RSVP </a> </td>
 
-        }
+                }   
+                else{
+                <td><a href="RSVP/@wed.WeddingId" > RSVP </a> </td>
+
+                }
+
+            
+       
+            }
+
+     
         
         
     </tr>
+        
 
     }
 
@@ -55,10 +66,4 @@
 <a href="newWedding">  <button>New Wedding</button></a>
 <br><br>
 
-     @foreach(var wed in ViewBag.weds ){
-        <p>Wedding: @wed.Wedding_Names</p>
-        @foreach(var v in wed.Vistors){
-            <p>@v.User.First_Name</p>
-           
-        }
-     }
+   
